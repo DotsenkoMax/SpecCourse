@@ -1,0 +1,154 @@
+(require '[clojure.spec.alpha :as s])
+(import java.lang.Math)
+(defn read_matrix_size [] 
+	(println "Введите размер квадратной матрицы")
+	(def n (read-line))
+	[n, n]
+)
+(defn input_matrix [n m]
+	(def matrix (make-array Double/TYPE n m))
+	(loop [x 0] 
+		(when (< x n)  
+			(def row (let [input (read-line)]
+        		(read-string (str "[" input "]")))
+        	)
+			(loop [y 0] 
+				(when (< y m)  
+					(aset matrix x y (get row y))
+					(recur (inc y))
+				) 
+			)
+			(recur (inc x))
+		)
+	)	
+	matrix
+)
+(defn zero_matrix [n m]
+	(make-array Double/TYPE n m)
+)		
+
+
+(defn multiplicate_matrix [A B]
+	(def n (alength A))
+	(def m (alength B))
+	(def k (alength (get B 0)))
+	(def C (zero_matrix n k))
+	(loop [i 0] 
+		(when (< i n) 
+			(loop [j 0] 
+				(when (< j k) 
+					(def sm (apply + (for [x (range m)] (* (aget A i x) (aget B x j)))))
+					(aset C i j sm)
+					(recur (inc j))
+				)
+			)
+			(recur (inc i))
+		)			
+	)
+	C
+)
+
+(defn identity_matrix [n]
+	(def I (zero_matrix n n))
+	(loop [x 0]
+		(when (< x n)
+			(aset I x x 1)
+			(recur (inc x))
+		)
+	)
+	I
+)
+
+(defn refractor_i_j [A, i, j]
+	(def m (alength (get A 0)))
+	(def deno (Math/sqrt (+ (* (aget A i i) (aget A i i)) (* (aget A j i) (aget A j i)))))
+	(def c_ij (/ (aget A i i) deno))
+	(def s_ij (/ (aget A j i) deno))
+
+	(loop [t i]
+		(when (< t m)
+			(def tmp_up (aget A i t))
+			(aset A i t (+ (* (aget A i t) c_ij) (* (aget A j t) s_ij)))
+			(aset A j t (+ (* tmp_up (- 0 s_ij)) (* (aget A j t) c_ij)))
+			(recur (inc t))
+		)
+	)
+	(def I (identity_matrix (alength A)))
+	(aset I i i c_ij)
+	(aset I j j c_ij)
+	(aset I i j s_ij)
+	(aset I j i (- 0 s_ij))
+	I
+)
+
+(defn transpose [Q]
+	(def n (alength Q))
+	(loop [i 0]
+		(when (< i n)
+			(loop [j (+ i 1)]
+				(when (< j m)
+					(def tmp (aget Q i j))
+					(aset Q i j (aget Q j i))
+					(aset Q j i tmp)
+					(recur (inc j))
+				)
+			)
+			(recur (inc i))
+		)
+	)
+)
+
+(defn QR [A]
+	(def m (alength (get A 0)))
+	(def n (alength A))
+	(def Q (identity_matrix n))
+	(loop [i 0]
+		(when (< i n)
+			(loop [j (+ i 1)]
+				(when (< j m)
+					(def I (refractor_i_j A i j))
+					(def Q (multiplicate_matrix I Q))
+					(recur (inc j))
+				)
+			)
+			(recur (inc i))
+		)
+	)
+	(transpose Q)
+	[Q A]
+)		
+
+(defn print_matrix [A]
+	(def m (alength (get A 0)))
+	(def n (alength A))
+	(loop [i 0]
+		(when (< i n)
+			(loop [j 0]
+				(when (< j m)
+					(print (aget A i j) " ")
+					(recur (inc j))
+				)
+			)
+			(println "")
+			(recur (inc i))
+		)
+	)
+)
+			
+
+(def matrix_size (read_matrix_size))
+(def n (Integer/parseInt (get matrix_size 0)))
+(def m (Integer/parseInt (get matrix_size 1)))
+(print "Кол-во строк/стобцов:" n m "\n")
+(println "Введите матрицу")
+(def input (input_matrix n m))
+
+(def qr_result (QR input))
+(def Q (get qr_result 0))
+(def R (get qr_result 1))
+(println "Матрица Q")
+(print_matrix Q)
+(println "Матрица R")
+(print_matrix R)
+(println "Произведение QR")
+(print_matrix (multiplicate_matrix Q R))
