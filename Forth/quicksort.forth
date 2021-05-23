@@ -1,5 +1,4 @@
-: -cell 1 cells - ;
-
+: cell- 1 cells - ;
 : mid ( l r -- mid ) drop ;
  
 : exch ( addr1 addr2 -- ) dup @ >r over @ swap ! r> swap ! ;
