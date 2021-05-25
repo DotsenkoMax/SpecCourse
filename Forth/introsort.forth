@@ -5,11 +5,14 @@ variable depth_of_recursion 10 depth_of_recursion ! \ next it is 2 * logariphm
 \ QUICK_SORT !!!
 : cell- 1 cells - ;
 
-: mid ( l r -- mid ) drop ;
+( l r -- mid )
+: mid drop ;
+
+( addr1 addr2 -- )
+: exch  dup @ >r over @ swap ! r> swap ! ;
  
-: exch ( addr1 addr2 -- ) dup @ >r over @ swap ! r> swap ! ;
- 
-: partition ( l r -- l r r2 l2 )
+( l r -- l r r2 l2 )
+: partition 
   -1 depth_of_recursion +!
   2dup mid @ >r ( r: pivot )
   2dup begin
@@ -18,74 +21,77 @@ variable depth_of_recursion 10 depth_of_recursion ! \ next it is 2 * logariphm
     2dup <= if 2dup exch >r cell+ r> cell- then
   2dup > until  r> drop ;
  
-: qsort ( l r -- )
+ ( l r -- )
+: qsort 
   depth_of_recursion @ 0= if exit then
   partition  swap rot
-  \ 2over 2over - + < if 2swap then
   2dup < if recurse else 1 depth_of_recursion +! 2drop then
   2dup < if recurse else 2drop then ;
  
-: quicksort ( array len -- flag)
+ ( array len -- flag)
+: quicksort 
   dup 2 < if 2drop exit then
   1- cells over + qsort 
   depth_of_recursion @ 0= if -1 ." Переключение на Heapsort." cr else 0 then 
  ;
 
 \ HEAPSORT !!!
-: r'@ r> r> r@ swap >r swap >r ;
+: r'@ r> r> r@ swap >r swap >r ; ( retrun stack: a, b, c -- a, b, c)  ( parameter stack: -- a)
  
- ( n1 n2 a -- f)
+( n1 n2 a -- f)
 : precedes >r cells r@ + @ swap cells r> + @ swap < ;   
+
 ( n1 n2 a --)                    
 : exchange >r cells r@ + swap cells r> + over @ over @ swap rot ! swap ! ;                        
  
-: print_array ( n addr -- n)
+ ( n addr -- n)
+: print_array 
 	swap 0 do
 	 dup i cells + ? loop cr drop ;
  
-: siftDown                             ( a e s -- a e s)
-  swap >r swap >r dup                  ( s r)
-  begin                                ( s r)
-    dup 2* 1+ dup r'@ <                ( s r c f)
-  while                                ( s r c)
-    dup 1+ dup r'@ <                   ( s r c c+1 f)
-    if                                 ( s r c c+1)
+ ( addr, n , ]n - 2[ / 2 -- )
+: siftDown                             
+  swap >r swap >r dup        ( ]n - 2[ /2 , ]n - 2[ /2  on parametr stack)  ( head_here -> addr, n, addr ] on return stack)           
+  begin                                
+    dup 2* 1+ dup r'@ <                
+  while                                
+    dup 1+ dup r'@ <                   
+    if                                 
       over over r@ precedes if swap then
-    then drop                          ( s r c)
-    over over r@ precedes              ( s r c f)
-  while                                ( s r c)
-    tuck r@ exchange                   ( s r)
-  repeat then                          ( s r)
-  drop drop r> swap r> swap            ( a e s)
+    then drop                          
+    over over r@ precedes              
+  while                                
+    tuck r@ exchange                   
+  repeat then                          
+  drop drop r> swap r> swap            
 ;
 
  ( addr , n -- )
-: heapsort                             ( a n --)
-  over >r                              ( a n)
-  dup 1- 1- 2/                         ( a c s)
-  begin                                ( a c s)
-    dup 0< 0=                          ( a c s f)
-  while                                ( a c s)
-    siftDown 1-                        ( a c s)
-  repeat drop                          ( a c)
- 
-  1- 0                                 ( a e 0)
-  begin                                ( a e 0)
-    over 0>                            ( a e 0 f)
-  while                                ( a e 0)
-    over over r@ exchange              ( a e 0)
-    siftDown swap 1- swap              ( a e 0)
-  repeat                               ( a e 0)
+: heapsort                             
+  over >r            ( save addr in additional stack)                            
+  dup 1- 1- 2/       ( addr, n , ]n - 2[ / 2)  
+  begin                                
+    dup 0< 0=         ( addr, n , ]n - 2[ / 2) ( while x >=0 )                 
+  while                                
+    siftDown 1-                        
+  repeat drop                          
+
+  1- 0                                 
+  begin                                
+    over 0>                            
+  while                                
+    over over r@ exchange              
+    siftDown swap 1- swap              
+  repeat                               
   drop drop drop r> drop
 ;
  
-
-: fetch-input ( sz - )
+( sz -- ) ( we read all our input into array readed_data)
+: fetch-input 
      0 do 
      	pad 40 accept   
      	pad swap s>number? drop
      	d>s readed_data i cells + ! loop ;
-
 
 
  ( addr , n -- )
