@@ -1,0 +1,5 @@
+literal ( Append the run-time semantics given below to the current definition. Place x on stack)
+( Compilation:)
+( x -- )
+( Run-time:)
+( -- x )
