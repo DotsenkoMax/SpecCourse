@@ -1,0 +1,87 @@
+1) Будем использовать https://godbolt.org/
+
+#include "stdio.h"
+typedef int (*fooType)();
+
+fooType fun() {
+    int a = 0;
+    int b = 1;
+    int c = 2;
+    int d = 3;
+    int e = 4;
+    int f2() {
+        a += 1;
+        b += 1;
+        c += 1;
+        d += 1;
+        e += 1;
+        return a;
+    }
+    return f2;
+}
+int main(void) {
+    printf("Result: %d", fun()());
+    printf("Result: %d", fun()());
+    return 0;
+}
+
+Данная программа сгенерирует следующий код на ассемблере.
+f2.0:
+        push    rbp
+        mov     rbp, rsp
+        mov     rax, r10
+        mov     QWORD PTR [rbp-8], r10
+        mov     edx, DWORD PTR [rax+16]
+        add     edx, 1
+        mov     DWORD PTR [rax+16], edx
+        mov     edx, DWORD PTR [rax+12]
+        add     edx, 1
+        mov     DWORD PTR [rax+12], edx
+        mov     edx, DWORD PTR [rax+8]
+        add     edx, 1
+        mov     DWORD PTR [rax+8], edx
+        mov     edx, DWORD PTR [rax+4]
+        add     edx, 1
+        mov     DWORD PTR [rax+4], edx
+        mov     edx, DWORD PTR [rax]
+        add     edx, 1
+        mov     DWORD PTR [rax], edx
+        mov     eax, DWORD PTR [rax+16]
+        pop     rbp
+        ret
+fun:
+        push    rbp
+        mov     rbp, rsp
+        lea     rax, [rbp+16]
+        mov     QWORD PTR [rbp-16], rax
+        lea     rax, [rbp-64]
+        add     rax, 20
+        lea     rdx, [rbp-64]
+        mov     ecx, OFFSET FLAT:f2.0
+        mov     WORD PTR [rax], -17599
+        mov     DWORD PTR [rax+2], ecx
+        mov     WORD PTR [rax+6], -17847
+        mov     QWORD PTR [rax+8], rdx
+        mov     DWORD PTR [rax+16], -1864106167
+        mov     eax, 0
+        mov     DWORD PTR [rbp-48], eax
+        mov     eax, 1
+        mov     DWORD PTR [rbp-52], eax
+        mov     eax, 2
+        mov     DWORD PTR [rbp-56], eax
+        mov     eax, 3
+        mov     DWORD PTR [rbp-60], eax
+        mov     eax, 4
+        mov     DWORD PTR [rbp-64], eax
+        lea     rax, [rbp-64]
+        add     rax, 20
+        pop     rbp
+        ret
+        
+2) Происходит следующее - при вызове функции  fun - в памяти помещается оффсет на функцию f2. 
+Далее относительно этого помещаются переменные, которые мы указываем в необходимые ячейки памяти PTR [rbp-48] и т.д.
+
+3) А далее в коде внутренней функции используются эти же адреса (то есть те же ячейки памяти в стеке)
+
+4) Поэтому данные переменные при различных созданиях f - различны, а при одном и том же выполнении будут теми же самыми. 
+ 
